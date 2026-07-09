@@ -68,8 +68,9 @@ const BottomNav = ({ activeTab, setActiveTab }) => {
         justifyContent: 'space-around',
         padding: '0 8px',
         pointerEvents: 'all',
-        boxShadow: '0 10px 40px rgba(0,0,0,0.5)',
-        border: '1px solid rgba(255,255,255,0.05)'
+        boxShadow: '0 10px 40px rgba(0,0,0,0.65)',
+        border: '1px solid rgba(255,255,255,0.12)',
+        background: 'rgba(10,10,10,0.95)'
       }}>
         {navItems.map((item) => (
           <button
@@ -82,7 +83,7 @@ const BottomNav = ({ activeTab, setActiveTab }) => {
               justifyContent: 'center',
               gap: '2px',
               width: '20%',
-              color: activeTab === item.id ? 'var(--gold)' : 'rgba(245, 245, 245, 0.3)',
+              color: activeTab === item.id ? 'var(--gold)' : 'rgba(245, 245, 245, 0.82)',
               transition: 'var(--transition-smooth)',
               position: 'relative',
               background: 'none',
@@ -120,7 +121,7 @@ const BottomNav = ({ activeTab, setActiveTab }) => {
                 }}>
                   <item.icon size={22} />
                 </div>
-                <span style={{ fontSize: '0.6rem', fontWeight: 600, opacity: activeTab === item.id ? 1 : 0.6 }}>{item.label}</span>
+                <span style={{ fontSize: '0.6rem', fontWeight: 700, opacity: activeTab === item.id ? 1 : 0.95, textShadow: '0 1px 6px rgba(0,0,0,0.6)' }}>{item.label}</span>
               </>
             )}
           </button>

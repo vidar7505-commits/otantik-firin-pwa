@@ -9,6 +9,7 @@ import img0no from '../assets/images/0no.png';
 import img1no from '../assets/images/1no.png';
 import { PRODUCTS_DATA as initialProducts } from '../data/products';
 import { getRecommendations } from '../utils/recommendations';
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 
 // ─── Menü Yaş Pasta Konfiguratörü ────────────────────────────────────────────
 const CAKE_MENU_SIZES = [
@@ -670,12 +671,14 @@ const HomePage = ({ setActiveTab }) => {
   const specialScrollRef = useRef(null);
   const modalRecsRef = useRef(null);
   const productsGridRef = useRef(null);
+  const detailPanelRef = useRef(null);
   const [canScroll, setCanScroll] = useState({ left: false, right: false });
 
   useDraggableScroll(catScrollRef);
   useDraggableScroll(bannerRef);
   useDraggableScroll(specialScrollRef);
   useDraggableScroll(modalRecsRef);
+  useBodyScrollLock(Boolean(selectedProduct) || Boolean(showFilters) || Boolean(activeSlip));
 
   const banners = [
     { id: 2, title: 'Geleneksel Miras', subtitle: 'Taş fırınımızdan çıkan taze ekmeklerimizi denediniz mi?', color: 'linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 100%)', icon: '🍞' }
@@ -836,6 +839,17 @@ const HomePage = ({ setActiveTab }) => {
     return () => window.removeEventListener('resize', checkOverflow);
   }, []);
 
+  useEffect(() => {
+    if (!selectedProduct || !detailPanelRef.current) return;
+
+    const node = detailPanelRef.current;
+    const frame = requestAnimationFrame(() => {
+      node.scrollTop = 0;
+      node.scrollTo({ top: 0, behavior: 'auto' });
+    });
+
+    return () => cancelAnimationFrame(frame);
+  }, [selectedProduct?.id, isConfiguring]);
 
   const toggleAllergen = (allergen) => {
     setExcludedAllergens(prev => 
@@ -1268,9 +1282,10 @@ const HomePage = ({ setActiveTab }) => {
             }}
           >
             <motion.div
+              ref={detailPanelRef}
               initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
               className="glass"
-              style={{ width: '100%', maxWidth: '480px', background: 'var(--anthracite)', borderTopLeftRadius: '40px', borderTopRightRadius: '40px', padding: '2.5rem 2rem 3rem', border: `1px solid ${selectedProduct.isCake ? '#E5393544' : 'var(--gold-muted)'}`, maxHeight: '90vh', overflowY: 'auto' }}
+              style={{ width: '100%', maxWidth: '480px', background: 'var(--anthracite)', borderTopLeftRadius: '40px', borderTopRightRadius: '40px', padding: '2.5rem 2rem 3rem', border: `1px solid ${selectedProduct.isCake ? '#E5393544' : 'var(--gold-muted)'}`, maxHeight: '90vh', overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}
               onClick={(e) => e.stopPropagation()}
             >
               {isConfiguring ? (

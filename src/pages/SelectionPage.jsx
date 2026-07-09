@@ -7,6 +7,7 @@ import { OrderConfigurator } from '../components/menu/OrderConfigurator';
 import { OrderSlipModal } from '../components/menu/OrderSlipModal';
 import { QuantitySlider } from '../components/ui/QuantitySlider';
 import { PRODUCTS_DATA } from '../data/products';
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 
 const CATEGORIES = [
   { id: 'kuru-pasta', name: 'Kuru Pasta', color: '#D4AF37', muted: 'rgba(212, 175, 55, 0.15)', accent: '#FFD700' },
@@ -32,6 +33,7 @@ const SelectionPage = ({ setActiveTab }) => {
   const [activeSlip, setActiveSlip] = useState(null);
   const [showAutoFill, setShowAutoFill] = useState(false);
   const [isModalAtTop, setIsModalAtTop] = useState(true);
+  const [isDraggingModal, setIsDraggingModal] = useState(false);
 
   const productsRef = React.useRef(null);
   const detailModalRef = useRef(null);
@@ -42,27 +44,7 @@ const SelectionPage = ({ setActiveTab }) => {
     }
   }, [isBuilding]);
 
-  React.useEffect(() => {
-    if (!viewingProduct) return;
-    const scrollY = window.scrollY;
-    const originalBodyOverflow = document.body.style.overflow;
-    const originalBodyPosition = document.body.style.position;
-    const originalBodyTop = document.body.style.top;
-    const originalHtmlOverflow = document.documentElement.style.overflow;
-
-    document.body.style.overflow = 'hidden';
-    document.body.style.position = 'fixed';
-    document.body.style.top = `-${scrollY}px`;
-    document.documentElement.style.overflow = 'hidden';
-
-    return () => {
-      document.body.style.overflow = originalBodyOverflow;
-      document.body.style.position = originalBodyPosition;
-      document.body.style.top = originalBodyTop;
-      document.documentElement.style.overflow = originalHtmlOverflow;
-      window.scrollTo(0, scrollY);
-    };
-  }, [viewingProduct]);
+  useBodyScrollLock(Boolean(viewingProduct) || Boolean(selectedProduct));
 
   const groupedProducts = useMemo(() => {
     let filtered = PRODUCTS_DATA.filter(p => p.category === activeCat);
@@ -290,21 +272,28 @@ const SelectionPage = ({ setActiveTab }) => {
               exit={{ y: '100%' }}
               drag={isModalAtTop ? 'y' : false}
               dragConstraints={{ top: 0, bottom: 0 }}
-              dragElastic={0.2}
+              dragElastic={0.12}
+              dragMomentum={false}
               onDragStart={() => {
+                setIsDraggingModal(true);
                 if (detailModalRef.current) {
                   setIsModalAtTop(detailModalRef.current.scrollTop === 0);
                 }
               }}
               onDragEnd={(event, info) => {
-                if (isModalAtTop && info.offset.y > 110) {
+                setIsDraggingModal(false);
+                if (isModalAtTop && (info.offset.y < -110 || info.offset.y > 110)) {
                   setViewingProduct(null);
                 }
               }}
               onClick={(e) => e.stopPropagation()}
-              onScroll={(e) => setIsModalAtTop(e.target.scrollTop === 0)}
+              onScroll={(e) => {
+                if (!isDraggingModal) {
+                  setIsModalAtTop(e.target.scrollTop === 0);
+                }
+              }}
               className="glass"
-              style={{ width: '100%', maxWidth: '480px', padding: '2.5rem 2rem 4rem', borderTopLeftRadius: '45px', borderTopRightRadius: '45px', border: `1px solid rgba(255,255,255,0.06)`, background: '#080808', maxHeight: '92vh', overflowY: 'auto', position: 'relative', touchAction: 'pan-y', overscrollBehavior: 'contain' }}
+              style={{ width: '100%', maxWidth: '480px', padding: '2.5rem 2rem 4rem', borderTopLeftRadius: '45px', borderTopRightRadius: '45px', border: `1px solid rgba(255,255,255,0.06)`, background: '#080808', maxHeight: '92vh', overflowY: isDraggingModal ? 'hidden' : 'auto', position: 'relative', touchAction: 'pan-y', overscrollBehavior: 'contain' }}
             >
               <button 
                 onClick={() => setViewingProduct(null)} 

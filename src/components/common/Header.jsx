@@ -34,6 +34,7 @@ const Header = ({ activeTab, setActiveTab }) => {
         backdropFilter: blur,
         WebkitBackdropFilter: blur,
         borderBottom: `1px solid ${borderOpacity}`,
+        boxShadow: '0 8px 24px rgba(0,0,0,0.35)',
       }}
     >
       {/* Brand */}
@@ -77,8 +78,9 @@ const Header = ({ activeTab, setActiveTab }) => {
             fontSize: '1.4rem',
             color: '#fff',
             lineHeight: 1,
-            fontWeight: 400,
+            fontWeight: 600,
             letterSpacing: '0.5px',
+            textShadow: '0 2px 10px rgba(0,0,0,0.65)',
           }}>
             Otantik <span style={{ color: '#fff' }}>Fırın</span>
           </h2>
@@ -86,11 +88,12 @@ const Header = ({ activeTab, setActiveTab }) => {
             <MapPin size={11} style={{ color: 'var(--gold)' }} />
             <p style={{
               fontSize: '0.65rem',
-              color: 'var(--gold)',
+              color: '#f8d86b',
               letterSpacing: '2px',
               textTransform: 'uppercase',
-              fontWeight: 700,
-              opacity: 0.8
+              fontWeight: 800,
+              opacity: 1,
+              textShadow: '0 2px 8px rgba(0,0,0,0.7)'
             }}>
               {selectedBranch?.name || 'Seçilmedi'}
             </p>
