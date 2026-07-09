@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Info, Scale, Check, ChevronRight, ShoppingBag, Wand2, ChevronLeft, Box as BoxIcon, Star, Filter, Heart, Leaf, Wheat, Droplets, Egg, Nut, Plus, Minus, X, Sparkles, TrendingUp } from 'lucide-react';
 import { useCart } from '../context/CartContext';
@@ -31,14 +31,38 @@ const SelectionPage = ({ setActiveTab }) => {
   const [viewingProduct, setViewingProduct] = useState(null);
   const [activeSlip, setActiveSlip] = useState(null);
   const [showAutoFill, setShowAutoFill] = useState(false);
+  const [isModalAtTop, setIsModalAtTop] = useState(true);
 
   const productsRef = React.useRef(null);
+  const detailModalRef = useRef(null);
 
   React.useEffect(() => {
     if (isBuilding && productsRef.current) {
         productsRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [isBuilding]);
+
+  React.useEffect(() => {
+    if (!viewingProduct) return;
+    const scrollY = window.scrollY;
+    const originalBodyOverflow = document.body.style.overflow;
+    const originalBodyPosition = document.body.style.position;
+    const originalBodyTop = document.body.style.top;
+    const originalHtmlOverflow = document.documentElement.style.overflow;
+
+    document.body.style.overflow = 'hidden';
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${scrollY}px`;
+    document.documentElement.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.overflow = originalBodyOverflow;
+      document.body.style.position = originalBodyPosition;
+      document.body.style.top = originalBodyTop;
+      document.documentElement.style.overflow = originalHtmlOverflow;
+      window.scrollTo(0, scrollY);
+    };
+  }, [viewingProduct]);
 
   const groupedProducts = useMemo(() => {
     let filtered = PRODUCTS_DATA.filter(p => p.category === activeCat);
@@ -258,8 +282,30 @@ const SelectionPage = ({ setActiveTab }) => {
       {/* Product Detail Modal */}
       <AnimatePresence>
         {viewingProduct && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setViewingProduct(null)} style={{ position: 'fixed', inset: 0, zIndex: 4000, background: 'rgba(0,0,0,0.96)', backdropFilter: 'blur(20px)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
-            <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} onClick={(e) => e.stopPropagation()} className="glass" style={{ width: '100%', maxWidth: '480px', padding: '2.5rem 2rem 4rem', borderTopLeftRadius: '45px', borderTopRightRadius: '45px', border: `1px solid rgba(255,255,255,0.06)`, background: '#080808', maxHeight: '92vh', overflowY: 'auto', position: 'relative' }}>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setViewingProduct(null)} onWheel={(e) => e.stopPropagation()} onTouchMove={(e) => e.stopPropagation()} style={{ position: 'fixed', inset: 0, zIndex: 4000, background: 'rgba(0,0,0,0.96)', backdropFilter: 'blur(20px)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', overflow: 'hidden', overscrollBehavior: 'none' }}>
+            <motion.div
+              ref={detailModalRef}
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              drag={isModalAtTop ? 'y' : false}
+              dragConstraints={{ top: 0, bottom: 0 }}
+              dragElastic={0.2}
+              onDragStart={() => {
+                if (detailModalRef.current) {
+                  setIsModalAtTop(detailModalRef.current.scrollTop === 0);
+                }
+              }}
+              onDragEnd={(event, info) => {
+                if (isModalAtTop && info.offset.y > 110) {
+                  setViewingProduct(null);
+                }
+              }}
+              onClick={(e) => e.stopPropagation()}
+              onScroll={(e) => setIsModalAtTop(e.target.scrollTop === 0)}
+              className="glass"
+              style={{ width: '100%', maxWidth: '480px', padding: '2.5rem 2rem 4rem', borderTopLeftRadius: '45px', borderTopRightRadius: '45px', border: `1px solid rgba(255,255,255,0.06)`, background: '#080808', maxHeight: '92vh', overflowY: 'auto', position: 'relative', touchAction: 'pan-y', overscrollBehavior: 'contain' }}
+            >
               <button 
                 onClick={() => setViewingProduct(null)} 
                 style={{ position: 'absolute', top: '20px', right: '20px', background: 'rgba(255,255,255,0.05)', border: 'none', color: '#fff', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10 }}

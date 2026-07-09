@@ -258,8 +258,8 @@ const DeliveryScheduler = ({ deliveryDates, selectedDateStr, setSelectedDateStr,
       </div>
 
       {/* Info note */}
-      <div style={{ background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.15)', borderRadius: '12px', padding: '10px 12px', fontSize: '0.69rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.6 }}>
-        💡 En erken teslimat, sipariş anından itibaren <strong style={{ color: 'var(--gold)' }}>2 saat sonrası</strong> için planlanır. Siparişiniz <strong style={{ color: 'var(--gold)' }}>hazır</strong> olarak güncellendiğinde sizi arayarak bilgilendiririz — daha erken teslim alabilirsiniz.
+      <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(212,175,55,0.16)', borderRadius: '12px', padding: '10px 12px', fontSize: '0.69rem', color: 'rgba(255,255,255,0.85)', lineHeight: 1.6 }}>
+        💡 En erken teslimat, sipariş anından itibaren <strong style={{ color: 'var(--gold)' }}>2 saat sonrası</strong> için planlanır. Siparişlerim kısmından teslim alınabilir olarak güncellendiğinde <strong>erkenden teslim alabilirsiniz</strong>.
       </div>
     </div>
   );
@@ -576,15 +576,14 @@ const CartPage = ({ setActiveTab }) => {
         />
       </div>
 
-      <div style={{ position: 'fixed', bottom: '100px', left: '20px', right: '20px', zIndex: 100 }}>
-        <div className="glass-gold" style={{ padding: '1.5rem', borderRadius: '24px', boxShadow: '0 20px 50px rgba(0,0,0,0.5)', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+      <div className="cart-checkout-wrapper" style={{ position: 'fixed', bottom: '100px', left: '20px', right: '20px', zIndex: 100, maxWidth: '720px', margin: '0 auto' }}>
+        <div className="glass-gold cart-checkout-panel" style={{ background: 'rgba(12, 12, 12, 0.90)', border: '1px solid rgba(255, 255, 255, 0.08)', padding: '1.3rem', borderRadius: '22px', boxShadow: '0 20px 50px rgba(0,0,0,0.5)', display: 'flex', flexDirection: 'column', gap: '0.9rem', maxHeight: '72vh', overflowY: 'auto' }}>
 
           {/* Warning Banner for Minimum Purchase Limit */}
           {total < 1000 && (
-            <div style={{ background: 'rgba(255, 77, 77, 0.1)', border: '1px solid rgba(255, 77, 77, 0.3)', borderRadius: '14px', padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <div style={{ background: 'rgba(255, 77, 77, 0.12)', border: '1px solid rgba(255, 77, 77, 0.25)', borderRadius: '14px', padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: '3px' }}>
               <span style={{ fontSize: '0.75rem', color: '#ff4d4d', fontWeight: 900, letterSpacing: '0.5px' }}>⚠️ MİNİMUM SİPARİŞ LİMİTİ</span>
-              <span style={{ fontSize: '0.72rem', opacity: 0.85, color: '#fff' }}>Siparişinizi tamamlamak için sepet tutarı en az <strong>1000 ₺</strong> olmalıdır.</span>
-              <span style={{ fontSize: '0.72rem', color: 'var(--gold)', fontWeight: 800 }}>Eksik Tutar: {(1000 - total).toFixed(2)} ₺</span>
+              <span style={{ fontSize: '0.72rem', opacity: 0.9, color: '#fff' }}>Sepetiniz 1000 ₺ altındadır. Eksik tutar: {(1000 - total).toFixed(2)} ₺.</span>
             </div>
           )}
 
