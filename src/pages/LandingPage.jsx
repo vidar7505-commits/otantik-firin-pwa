@@ -117,7 +117,7 @@ function SparksAndParticles() {
   return (
     <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0, overflow: 'hidden' }}>
       {/* Background depth stars (twinkling) */}
-      {Array.from({ length: 24 }, (_, i) => (
+      {Array.from({ length: 12 }, (_, i) => (
         <motion.div
           key={`star-${i}`}
           initial={{ opacity: 0 }}
@@ -125,7 +125,7 @@ function SparksAndParticles() {
           transition={{
             duration: 4 + (i % 3) * 1.5,
             repeat: Infinity,
-            delay: i * 0.35,
+            delay: i * 0.7,
             ease: 'easeInOut'
           }}
           style={{
@@ -142,19 +142,18 @@ function SparksAndParticles() {
       ))}
 
       {/* Warm rising ambient steam particles (very subtle and behind) */}
-      {Array.from({ length: 14 }, (_, i) => (
+      {Array.from({ length: 4 }, (_, i) => (
         <motion.div
           key={`steam-${i}`}
           initial={{ y: 150, opacity: 0, scale: 0.5 }}
           animate={{ y: -380, opacity: [0, 0.08, 0], scale: [0.5, 2, 3] }}
-          transition={{ duration: 12 + (i % 5) * 2, repeat: Infinity, delay: i * 0.8, ease: 'linear' }}
+          transition={{ duration: 12 + (i % 3) * 2, repeat: Infinity, delay: i * 2.8, ease: 'linear' }}
           style={{
             position: 'absolute',
             bottom: `${(i * 9) % 25}%`,
-            left: `${10 + (i * 17) % 80}%`,
+            left: `${10 + (i * 21) % 80}%`,
             width: 16, height: 16, borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(212,175,55,0.18) 0%, transparent 70%)',
-            filter: 'blur(12px)',
+            background: 'radial-gradient(circle, rgba(212,175,55,0.12) 0%, transparent 60%)',
           }}
         />
       ))}
@@ -529,7 +528,7 @@ export default function LandingPage() {
   const logoRef   = useRef(null);
   const taglineRef = useRef(null);
 
-  const [logoReady, setLogoReady] = useState(false);
+  const [logoReady, setLogoReady] = useState(true);
 
   // GSAP hero entrance timeline
   useEffect(() => {

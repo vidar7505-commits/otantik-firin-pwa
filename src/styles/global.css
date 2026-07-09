@@ -233,3 +233,20 @@ button {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* ═══ RESPONSIVE SPECIAL PRODUCT CARDS ═══ */
+.special-product-item {
+  flex: 0 0 auto;
+  min-width: calc(33.333% - 1rem);
+}
+@media (max-width: 1024px) {
+  .special-product-item {
+    min-width: calc(50% - 0.75rem);
+  }
+}
+@media (max-width: 480px) {
+  .special-product-item {
+    min-width: calc(85% - 0.75rem);
+  }
+}
+

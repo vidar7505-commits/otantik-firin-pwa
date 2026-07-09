@@ -8,6 +8,7 @@ import { CakeConfigurator } from '../components/menu/CakeConfigurator';
 import img0no from '../assets/images/0no.png';
 import img1no from '../assets/images/1no.png';
 import { PRODUCTS_DATA as initialProducts } from '../data/products';
+import { getRecommendations } from '../utils/recommendations';
 
 // ─── Menü Yaş Pasta Konfiguratörü ────────────────────────────────────────────
 const CAKE_MENU_SIZES = [
@@ -572,7 +573,7 @@ const ProductCard = ({ product, onSelect, setActiveTab }) => {
   );
 };
 
-// Custom Hook for Mouse Drag Scroll
+// Custom Hook for Mouse Drag Scroll with Click Capture Guard
 const useDraggableScroll = (ref) => {
   useEffect(() => {
     const el = ref.current;
@@ -581,9 +582,11 @@ const useDraggableScroll = (ref) => {
     let isDown = false;
     let startX;
     let scrollLeft;
+    let isDragging = false;
 
     const onMouseDown = (e) => {
       isDown = true;
+      isDragging = false;
       el.style.cursor = 'grabbing';
       el.style.userSelect = 'none'; // Prevent text selection
       startX = e.pageX - el.offsetLeft;
@@ -606,29 +609,48 @@ const useDraggableScroll = (ref) => {
       if (!isDown) return;
       e.preventDefault();
       const x = e.pageX - el.offsetLeft;
-      const walk = (x - startX) * 1.0; // Slower, more controlled scroll (reduced from 1.5)
+      if (Math.abs(x - startX) > 6) {
+        isDragging = true;
+      }
+      const walk = (x - startX) * 1.2; 
       el.scrollLeft = scrollLeft - walk;
+    };
+
+    const onClickCapture = (e) => {
+      if (isDragging) {
+        e.stopPropagation();
+        e.preventDefault();
+      }
     };
 
     el.addEventListener('mousedown', onMouseDown);
     el.addEventListener('mouseleave', onMouseLeave);
     el.addEventListener('mouseup', onMouseUp);
     el.addEventListener('mousemove', onMouseMove);
+    el.addEventListener('click', onClickCapture, true);
 
     return () => {
       el.removeEventListener('mousedown', onMouseDown);
       el.removeEventListener('mouseleave', onMouseLeave);
       el.removeEventListener('mouseup', onMouseUp);
       el.removeEventListener('mousemove', onMouseMove);
+      el.removeEventListener('click', onClickCapture, true);
     };
-  }, [ref]);
+  }, [ref, ref.current]);
 };
 
 const HomePage = ({ setActiveTab }) => {
   const [selectedProduct, setSelectedProduct] = useState(null);
+  const [addedFeedbackId, setAddedFeedbackId] = useState(null);
+
+  const productRecommendations = useMemo(() => {
+    return getRecommendations(selectedProduct, initialProducts);
+  }, [selectedProduct]);
+
   const handleSelectProduct = (p) => {
     setSelectedProduct(p);
     setIsConfiguring(false); // Reset to details view when a new product is selected
+    setQuantity(1);
   };
   const [activeCategory, setActiveCategory] = useState('Hepsi');
   const [searchQuery, setSearchQuery] = useState('');
@@ -646,12 +668,14 @@ const HomePage = ({ setActiveTab }) => {
   const catScrollRef = useRef(null);
   const bannerRef = useRef(null);
   const specialScrollRef = useRef(null);
+  const modalRecsRef = useRef(null);
   const productsGridRef = useRef(null);
   const [canScroll, setCanScroll] = useState({ left: false, right: false });
 
   useDraggableScroll(catScrollRef);
   useDraggableScroll(bannerRef);
   useDraggableScroll(specialScrollRef);
+  useDraggableScroll(modalRecsRef);
 
   const banners = [
     { id: 2, title: 'Geleneksel Miras', subtitle: 'Taş fırınımızdan çıkan taze ekmeklerimizi denediniz mi?', color: 'linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 100%)', icon: '🍞' }
@@ -708,7 +732,7 @@ const HomePage = ({ setActiveTab }) => {
     return () => clearInterval(timer);
   }, [banners.length, lastInteraction]);
 
-  // Auto-special products scroll (Synced with banners, 2-by-2)
+  // Auto-special products scroll (Synced with banners, responsive shift)
   useEffect(() => {
     // Only run if we are in 'Hepsi' category where special products are visible
     if (specialProducts.length <= 2 || activeCategory !== 'Hepsi') return;
@@ -716,7 +740,9 @@ const HomePage = ({ setActiveTab }) => {
     const timer = setInterval(() => {
       const timeSinceLastInteraction = Date.now() - lastInteraction;
       if (timeSinceLastInteraction > 5000) {
-        setActiveSpecial(prev => (prev + 2) >= (specialProducts.length * 2) ? 0 : prev + 2);
+        const isMobile = window.innerWidth <= 600;
+        const stepAmt = isMobile ? 1 : 2;
+        setActiveSpecial(prev => (prev + stepAmt) >= (specialProducts.length * 2) ? 0 : prev + stepAmt);
       }
     }, 6000); 
     return () => clearInterval(timer);
@@ -1106,7 +1132,7 @@ const HomePage = ({ setActiveTab }) => {
                     ease: [0.16, 1, 0.3, 1],
                     delay: (idx % specialProducts.length) * 0.15 
                   }}
-                  style={{ minWidth: 'calc(50% - 0.75rem)', flex: '0 0 auto' }}
+                  className="special-product-item"
                 >
                   <ProductCard product={p} onSelect={handleSelectProduct} setActiveTab={setActiveTab} />
                 </motion.div>
@@ -1307,6 +1333,87 @@ const HomePage = ({ setActiveTab }) => {
                       ))}
                     </div>
                   </div>
+
+                  {/* Amazon-style Recommendations: Yanına Yakışanlar */}
+                  {productRecommendations.length > 0 && (
+                    <div style={{ marginBottom: '2.5rem' }}>
+                      <h4 style={{ color: 'var(--gold)', fontSize: '0.8rem', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        🛒 Birlikte Tercih Edilenler
+                      </h4>
+                      <div 
+                        ref={modalRecsRef}
+                        style={{ 
+                          display: 'flex', 
+                          gap: '10px', 
+                          overflowX: 'auto', 
+                          paddingBottom: '8px', 
+                          scrollbarWidth: 'none', 
+                          msOverflowStyle: 'none', 
+                          WebkitOverflowScrolling: 'touch',
+                          cursor: 'grab'
+                        }} 
+                        className="no-scrollbar"
+                      >
+                        {productRecommendations.map(rec => {
+                          const isAdded = addedFeedbackId === rec.id;
+                          return (
+                            <div 
+                              key={rec.id} 
+                              className="glass" 
+                              style={{ 
+                                flexShrink: 0, 
+                                width: '124px', 
+                                padding: '12px 10px', 
+                                borderRadius: '18px', 
+                                border: '1px solid rgba(255,255,255,0.06)', 
+                                display: 'flex', 
+                                flexDirection: 'column', 
+                                gap: '6px', 
+                                justifyContent: 'space-between',
+                                background: 'rgba(255,255,255,0.02)'
+                              }}
+                            >
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center', textAlign: 'center' }}>
+                                <span style={{ fontSize: '2rem' }}>{rec.image}</span>
+                                <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#fff', height: '32px', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', lineHeight: 1.2 }}>
+                                  {rec.name}
+                                </div>
+                                <div style={{ fontSize: '0.72rem', color: 'var(--gold)', fontWeight: 800 }}>
+                                  {rec.price} ₺
+                                </div>
+                              </div>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  addToCart(rec, 1);
+                                  setAddedFeedbackId(rec.id);
+                                  setTimeout(() => setAddedFeedbackId(null), 1500);
+                                }}
+                                style={{
+                                  width: '100%',
+                                  padding: '6px',
+                                  borderRadius: '10px',
+                                  fontSize: '0.68rem',
+                                  fontWeight: 800,
+                                  background: isAdded ? '#2e7d32' : 'rgba(212,175,55,0.1)',
+                                  border: isAdded ? '1px solid #2e7d32' : '1px solid rgba(212,175,55,0.2)',
+                                  color: isAdded ? '#fff' : 'var(--gold)',
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  gap: '4px',
+                                  transition: 'all 0.2s ease',
+                                }}
+                              >
+                                {isAdded ? 'Eklendi! ✓' : <><Plus size={10} /> Sepete Ekle</>}
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
 
                   <div style={{ display: 'flex', gap: '1.2rem', alignItems: 'center' }}>
                     {!selectedProduct.isConfigurable && !selectedProduct.isCake && (

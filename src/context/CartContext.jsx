@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { recordOrderCooccurrence } from '../utils/recommendations';
 
 const CartContext = createContext();
 
@@ -135,13 +136,29 @@ export const CartProvider = ({ children }) => {
     return true;
   };
 
-  const finalizeOrder = (specialNote = '', noteCategory = '') => {
+  const finalizeOrder = (specialNote = '', noteCategory = '', deliveryDate = '', deliveryTime = '') => {
     const orderId = `ord-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
     
     // Generate combined slip
     let combinedSlip = `*🛍️ YENİ SİPARİŞ - OTANTİK*\n`;
     combinedSlip += `*ID:* ${orderId}\n`;
-    combinedSlip += `*Tarih:* ${new Date().toLocaleDateString('tr-TR')}\n\n`;
+    combinedSlip += `*Tarih:* ${new Date().toLocaleDateString('tr-TR')}\n`;
+
+    if (deliveryDate && deliveryTime) {
+      // Format deliveryDate from yyyy-mm-dd to dd.mm.yyyy
+      let formattedDelivDate = deliveryDate;
+      try {
+        const parts = deliveryDate.split('-');
+        if (parts.length === 3) {
+          formattedDelivDate = `${parts[2]}.${parts[1]}.${parts[0]}`;
+        }
+      } catch (err) {
+        console.error(err);
+      }
+      combinedSlip += `*Teslimat:* ${formattedDelivDate} - Saat: ${deliveryTime}\n\n`;
+    } else {
+      combinedSlip += `\n`;
+    }
 
     if (specialNote) {
         combinedSlip += `*⚠️ NOT (${noteCategory.toUpperCase()}):* ${specialNote}\n\n`;
@@ -191,10 +208,16 @@ export const CartProvider = ({ children }) => {
       items: cart,
       slip: combinedSlip,
       price: totalPrice,
+      status: 'received',
+      deliveryDate,
+      deliveryTime,
       specialNote,
       noteCategory
     };
     
+    // Record cooccurrence metrics for Amazon-style recommendation engine
+    recordOrderCooccurrence(cart);
+
     setOrders(prev => [orderData, ...prev]);
     setCart([]);
     return orderData;
@@ -204,15 +227,36 @@ export const CartProvider = ({ children }) => {
     setOrders(prev => [orderData, ...prev]);
   };
 
+  const updateOrderStatus = (orderId, newStatus) => {
+    setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
+  };
+
   const removeFromCart = (productId) => {
     setCart(prev => prev.filter(item => item.id !== productId));
+  };
+
+  const updateCartItem = (itemId, updatedFields) => {
+    setCart(prev => prev.map(item => {
+      if (item.id === itemId) {
+        let newItem = { ...item, ...updatedFields };
+        if (newItem.isCustomBox && updatedFields.boxData) {
+          const slip = generateWhatsAppSlip(updatedFields.boxData);
+          newItem.formattedSlip = slip;
+          newItem.weight = updatedFields.boxData.weight;
+          newItem.name = `${updatedFields.boxData.type === 'kuru-pasta' ? 'Kuru Pasta' : 'Petifür'} Seçkisi (${updatedFields.boxData.targetWeight}gr)`;
+          newItem.price = updatedFields.boxData.targetWeight === 500 ? 180 : 340;
+        }
+        return newItem;
+      }
+      return item;
+    }));
   };
 
   const cartCount = cart.length;
 
   return (
     <CartContext.Provider value={{ 
-      cart, addToCart, removeFromCart, cartCount, orders, finalizeOrder, addDirectOrder,
+      cart, addToCart, removeFromCart, updateCartItem, cartCount, orders, finalizeOrder, addDirectOrder, updateOrderStatus,
       currentBox, updateBoxConfig, addBoxItem, removeBoxItem, clearBox, confirmBox
     }}>
       {children}

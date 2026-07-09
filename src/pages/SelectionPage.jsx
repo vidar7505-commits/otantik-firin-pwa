@@ -13,8 +13,8 @@ const CATEGORIES = [
   { id: 'petifur', name: 'Petifür', color: '#ba68c8', muted: 'rgba(186, 104, 200, 0.15)', accent: '#e1bee7' }
 ];
 
-const SelectionPage = () => {
-  const { confirmBox, addToCart } = useCart();
+const SelectionPage = ({ setActiveTab }) => {
+  const { confirmBox, addToCart, updateCartItem } = useCart();
   const { 
     boxes, currentBox, config, isBuilding, setBuilding, 
     addItem, removeItem, setItemQuantity, fillRemaining, 
@@ -67,7 +67,7 @@ const SelectionPage = () => {
   };
 
   const handleFinishBuilding = () => {
-    const { targetWeight, config, boxes } = useBoxStore.getState();
+    const { targetWeight, config, boxes, editingBoxId } = useBoxStore.getState();
     const total = (boxes.box1?.length || 0) * 25 + (boxes.box2?.length || 0) * 25;
     
     if (total < Number(targetWeight)) {
@@ -77,6 +77,7 @@ const SelectionPage = () => {
 
     const boxData = {
         items: config.packaging === 'mixed' ? boxes.box1 : [...boxes.box1, ...boxes.box2],
+        originalBoxes: { box1: [...boxes.box1], box2: [...boxes.box2] },
         targetWeight: targetWeight,
         weight: (config.packaging === 'mixed' ? boxes.box1.length : boxes.box1.length + boxes.box2.length) * 25,
         type: config.type,
@@ -85,9 +86,21 @@ const SelectionPage = () => {
         preferences: config.preferences
     };
 
-    confirmBox(boxData);
+    if (editingBoxId) {
+      updateCartItem(editingBoxId, {
+        weight: boxData.weight,
+        boxData: { ...boxData }
+      });
+      useBoxStore.setState({ editingBoxId: null });
+    } else {
+      confirmBox(boxData);
+    }
     reset();
-    window.location.href = '/cart'; // Redirect to cart
+    if (setActiveTab) {
+      setActiveTab('cart');
+    } else {
+      window.location.href = '/cart';
+    }
   };
 
   const orderPercentage = Math.min((totalWeight / Number(targetWeight)) * 100, 100);

@@ -26,6 +26,7 @@ export const useBoxStore = create(
       isBuilding: false,
       specialNote: '',
       noteCategory: 'Özel İstek', // ['Arayın', 'Değiştirin', 'Özel İstek']
+      editingBoxId: null,
 
       setBuilding: (val) => set({ isBuilding: val }),
       
@@ -185,7 +186,8 @@ export const useBoxStore = create(
       reset: () => set({
         boxes: { box1: [], box2: [] },
         isBuilding: false,
-        specialNote: ''
+        specialNote: '',
+        editingBoxId: null
       })
     }),
     {

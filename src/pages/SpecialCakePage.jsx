@@ -400,13 +400,62 @@ function QuickQuestions({ onSelectQuestion }) {
 function ChatBot() {
   const [open, setOpen] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
-  const [msgs, setMsgs] = useState([
-    { id: 1, from: 'bot', text: 'Merhaba! 👋 Pasta siparişinde yardımcı olabilirim. Aşağıdan hızlı soru seçebilir ya da kendiniz yazabilirsiniz.' }
-  ]);
+  const chatRef = useRef(null);
+
+  const [msgs, setMsgs] = useState(() => {
+    try {
+      const saved = localStorage.getItem('otantik_chat_messages');
+      return saved ? JSON.parse(saved) : [
+        { id: 1, from: 'bot', text: 'Merhaba! 👋 Pasta siparişinde yardımcı olabilirim. Aşağıdan hızlı soru seçebilir ya da kendiniz yazabilirsiniz.' }
+      ];
+    } catch {
+      return [
+        { id: 1, from: 'bot', text: 'Merhaba! 👋 Pasta siparişinde yardımcı olabilirim. Aşağıdan hızlı soru seçebilir ya da kendiniz yazabilirsiniz.' }
+      ];
+    }
+  });
+
   const [input, setInput] = useState('');
   const [typing, setTyping] = useState(false);
   const endRef = useRef(null);
-  useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [msgs]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('otantik_chat_messages', JSON.stringify(msgs));
+    } catch (e) {
+      console.error(e);
+    }
+  }, [msgs]);
+
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [msgs]);
+
+  useEffect(() => {
+    if (!open) return;
+    const handleOutsideClick = (e) => {
+      if (chatRef.current && !chatRef.current.contains(e.target)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    document.addEventListener('touchstart', handleOutsideClick);
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick);
+      document.removeEventListener('touchstart', handleOutsideClick);
+    };
+  }, [open]);
+
+  useEffect(() => {
+    const isMobile = window.innerWidth <= 600;
+    if (open && (isMobile || fullscreen)) {
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = originalOverflow;
+      };
+    }
+  }, [open, fullscreen]);
 
   const send = (text) => {
     if (!text.trim()) return;
@@ -449,16 +498,16 @@ function ChatBot() {
         height: 'calc(100dvh - var(--header-height) - var(--nav-height))',
         width: '100vw',
         borderRadius: 0,
-        zIndex: 900 // fits nicely between Header (2000) and Nav (1000)
+        zIndex: 1500
       }
     : {
         position: 'fixed',
-        bottom: 'calc(var(--nav-height) + 130px)', // stacks nicely above the trigger button
-        right: 14,
-        width: 'min(360px, calc(100vw - 28px))',
+        bottom: 'calc(var(--nav-height) + 12px)',
+        right: 12,
+        width: 'min(360px, calc(100vw - 24px))',
         borderRadius: 22,
-        zIndex: 500,
-        maxHeight: '52vh'
+        zIndex: 1500,
+        maxHeight: 'calc(100dvh - var(--header-height) - var(--nav-height) - 24px)'
       };
 
   return (
@@ -477,6 +526,7 @@ function ChatBot() {
       <AnimatePresence>
         {open && (
           <motion.div
+            ref={chatRef}
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
@@ -650,7 +700,7 @@ function SpecialCakeInner() {
     const id = `sp-${Date.now()}`;
     const modeLabel = mode === 'catalog' ? `Katalog: ${catalogCake?.name}` : mode === 'tezgah' ? `Tezgah: ${tezgahCake?.name}` : `Özel: ${activeStyle?.name}`;
     const slip = `🎂 ÖZEL PASTA - OTANTİK\nID: ${id}\nTasarım: ${modeLabel}\nBoyut: ${cakeSize}\nDolgu: ${fillings.join(', ') || 'Yok'}\nKrema: ${creams.join(', ') || 'Standart'}\nNot: ${customNote || '-'}\nTeslim: ${custName} / ${custPhone} / ${delivDate} ${delivTime}\nToplam: ${total}₺  |  Kapora: ${deposit}₺`;
-    const order = { id, productName: `Özel Pasta (${cakeSize})`, price: total, date: new Date().toISOString(), slip };
+    const order = { id, productName: `Özel Pasta (${cakeSize})`, price: total, date: new Date().toISOString(), slip, status: 'received' };
     addDirectOrder(order);
     setPlaced(order);
     setMode('success');
